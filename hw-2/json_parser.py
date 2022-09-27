@@ -1,10 +1,12 @@
+import dataclasses
 import json
 
 
-def parse_json(json_str: str, keyword_callback, required_fields=None, keywords=None):
-    if (required_fields == None or keywords == None):
+def parse_json(json_str: str, keyword_callback,
+               required_fields=None, keywords=None):
+    if (required_fields is None or keywords is None):
         return
-    
+
     json_doc = json.loads(json_str)
 
     for key in json_doc:
@@ -14,8 +16,9 @@ def parse_json(json_str: str, keyword_callback, required_fields=None, keywords=N
                     keyword_callback(keyword)
 
 
+@dataclasses.dataclass
 class KeyWordList:
-    
+
     def __init__(self):
         self.list = []
 
