@@ -1,5 +1,4 @@
 import io
-from multiprocessing import context
 import sys
 import unittest
 import contextlib
@@ -26,23 +25,30 @@ class TestTicTac(unittest.TestCase):
         self.assertEqual(game.get_coordinates(), (0, 0))
 
     def test_get_coordinates_incorrect(self):
-        with contextlib.redirect_stdout(None):
-            game = TicTacGame()
+        game = TicTacGame()
 
-            test_input = io.StringIO("1 ²")
-            sys.stdin = test_input
+        test_input = io.StringIO("1 ²")
+        sys.stdin = test_input
 
-            self.failureException(game.get_coordinates())
+        test_output = io.StringIO()
+        sys.stdout = test_output
 
-            test_input = io.StringIO("2;")
-            sys.stdin = test_input
+        self.failureException(game.get_coordinates())
 
-            self.failureException(game.get_coordinates())
+        test_input = io.StringIO("2")
+        sys.stdin = test_input
 
-            test_input = io.StringIO("asd")
-            sys.stdin = test_input
+        self.failureException(game.get_coordinates())
 
-            self.failureException(game.get_coordinates())
+        test_input = io.StringIO("2;")
+        sys.stdin = test_input
+
+        self.failureException(game.get_coordinates())
+
+        test_input = io.StringIO("asd")
+        sys.stdin = test_input
+
+        self.failureException(game.get_coordinates())
 
     def test_validate_input_correct(self):
         game = TicTacGame()

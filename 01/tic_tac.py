@@ -74,10 +74,14 @@ class TicTacGame:
     def get_coordinates(self):
         try:
             coordinates = tuple(map(int, input().split()))
-        except:
+            if len(coordinates) != 2:
+                raise ValueError
+
+        except ValueError:
             print("Input is incorrect. Use: 'row' 'column'")
             print("Example: 0 1")
-            return
+            return None
+
         return coordinates
 
 
