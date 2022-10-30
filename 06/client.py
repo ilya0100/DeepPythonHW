@@ -7,49 +7,51 @@ from server import NetProtocol
 
 
 class Client:
-    def __init__(self, path, address="localhost", port=8080, threads_count=1, queue_size=10):
-        self.path = path
+    def __init__(self, address="localhost", port=8080, queue_size=10):
         self.address = address
         self.port = port
 
         self._net = NetProtocol()
 
-        self.threads_count = threads_count
-        self._thread_list = None
-        
+        self._thread_list = []
+
         self._urls_pool = Queue(queue_size)
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def start(self):
+    def start(self, fileobj, threads_count=1):
         self._socket.connect((self.address, self.port))
-        self._start_threads()
+        self._start_threads(threads_count)
 
-        self._parse_file()
+        self._parse_file(fileobj)
         self.stop()
 
     def stop(self):
-        for th in self._thread_list:
-            th.join()
+        for thread in self._thread_list:
+            thread.join()
         self._socket.close()
 
-    def _start_threads(self):
+    def _start_threads(self, threads_count):
         self._thread_list = [
-            Thread(target=self._make_request) for _ in range(self.threads_count)
+            Thread(target=self._make_request) for _ in range(threads_count)
         ]
-        for th in self._thread_list:
-            th.start()
+        for thread in self._thread_list:
+            thread.start()
 
-    def _parse_file(self):
-        with open(self.path, "r") as urls:
-            for line in urls:
-                if line.strip() == '':
-                    continue
+    def _parse_file(self, fileobj):
+        urls = []
+        for line in fileobj:
+            if line.strip() == "":
+                continue
 
-                url = line.strip()
+            urls.append(line.strip())
+
+        for i, url in enumerate(urls):
+            if i == len(urls) - 1:
+                self._urls_pool.put((url, False))
+            else:
                 self._urls_pool.put((url, True))
 
-
-        for _ in range(self.threads_count):
+        for _ in enumerate(self._thread_list):
             self._urls_pool.put((None, None))
 
     def _make_request(self):
@@ -74,6 +76,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    client = Client(args.f, threads_count=int(args.t))
-    client.start()
+    client = Client()
+
+    with open(args.f, "r", encoding="utf-8") as urls_file:
+        client.start(urls_file, threads_count=int(args.t))
+
     client.stop()
