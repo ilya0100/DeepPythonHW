@@ -30,6 +30,7 @@ class Client:
     def stop(self):
         for th in self._thread_list:
             th.join()
+        self._socket.close()
 
     def _start_threads(self):
         self._thread_list = [

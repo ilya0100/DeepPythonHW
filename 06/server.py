@@ -53,10 +53,10 @@ class Server:
 
         self._net = NetProtocol()
 
-        self._urls_processed = count(start=1)
+        self._tasks_processed = count()
 
         self._thread_list = None
-        self._data_queue = Queue(queue_size)
+        self._task_queue = Queue(queue_size)
 
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -71,6 +71,7 @@ class Server:
         while True:
             try:
                 conn, _ = self._socket.accept()
+                self._net.buffer = ""
                 keep_alive = True
                 while keep_alive:
                     req = conn.recv(1024)
@@ -81,16 +82,17 @@ class Server:
                     keep_alive = messages[-1][0]
 
                     for msg in messages:
-                        self._data_queue.put((*msg, conn))
+                        self._task_queue.put((*msg, conn))
             except KeyboardInterrupt:
                 self.stop()
                 break
 
     def stop(self):
         for _ in range(self.workers_count):
-            self._data_queue.put(None)
+            self._task_queue.put(None)
         for th in self._thread_list:
             th.join()
+        self._socket.close()
 
     def _start_workers(self, func, *args):
         print("Strarting", self.workers_count, "workers")
@@ -103,7 +105,7 @@ class Server:
     def _worker_routine(self, func, *args):
         print("Strart routine at thread:", current_thread())
         while True:
-            task = self._data_queue.get()
+            task = self._task_queue.get()
             if task is None:
                 break
             keep_alive, data, conn = task
@@ -120,13 +122,13 @@ class Server:
                 resp = f"{data}: network error"
             finally:
                 conn.sendall(self._net.make_msg(resp))
-                self._data_queue.task_done()
+                self._task_queue.task_done()
 
             with Lock():
-                print("Number of processed urls:", next(self._urls_processed))
+                print("Number of processed tasks:", next(self._tasks_processed) + 1)
 
             if keep_alive == False:
-                while self._data_queue.unfinished_tasks > 0:
+                while self._task_queue.unfinished_tasks > 0:
                     sleep(0.5)
                 conn.close()
 
