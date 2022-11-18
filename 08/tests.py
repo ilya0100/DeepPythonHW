@@ -1,15 +1,14 @@
 # pylint: disable=protected-access
 
 from asyncio import create_task
-import aiounittest
+from unittest.mock import AsyncMock, Mock, patch
+from unittest.async_case import IsolatedAsyncioTestCase
 
-from unittest.mock import AsyncMock, patch
-from aiounittest.mock import AsyncMockIterator
 from faker import Faker
 from fetcher import Fetcher
 
 
-class TestFetcher(aiounittest.AsyncTestCase):
+class TestFetcher(IsolatedAsyncioTestCase):
     def test_parse_url(self):
         test_cases = [
             {
@@ -36,28 +35,49 @@ class TestFetcher(aiounittest.AsyncTestCase):
     async def test_fetch_url(self):
         fake = Faker()
         urls = [fake.url() for _ in range(5)]
-        page_text = [fake.text() for _ in range(5)]
-        mock_iter = AsyncMockIterator(page_text)
+        page_text = fake.text()
 
         fetcher = Fetcher()
 
         for url in urls:
             await fetcher._queue.put(url)
 
-        session_mock = AsyncMock()
+        session_mock = Mock()
         resp_mock = AsyncMock()
-        session_mock.get.return_value.__aenter__.return_value = resp_mock
-        resp_mock.text.return_value = mock_iter
-
-        async with session_mock.get(url) as resp:
-            page = await resp.text()
-            print(page)
+        session_mock.get.return_value = resp_mock
+        resp_mock.__aenter__.return_value.text.return_value = page_text
 
         task = create_task(fetcher._fetch_url(session_mock))
-        await task
+        await fetcher._queue.join()
         task.cancel()
 
         self.assertTrue(fetcher._queue.empty())
-        for expected_text in page_text:
+        expected_result = fetcher.parse_url(page_text)
+        while not fetcher._out_queue.empty():
             text = await fetcher._out_queue.get()
-            self.assertEqual(expected_text, text)
+            self.assertEqual(expected_result, text)
+
+    async def test_fetch(self):
+        fake = Faker()
+        urls = [fake.url() for _ in range(10)]
+
+        fetcher = Fetcher(workers_count=5)
+
+        async def side_effect(_):
+            while True:
+                url = await fetcher._queue.get()
+                await fetcher._out_queue.put(url)
+                fetcher._queue.task_done()
+
+        with patch("fetcher.Fetcher._fetch_url") as fetch_url_mock:
+            fetch_url_mock.side_effect = side_effect
+            result = await fetcher.fetch(urls)
+
+        for worker in fetcher._workers:
+            self.assertFalse(worker.done())
+
+        self.assertTrue(fetcher._queue.empty())
+        self.assertTrue(fetcher._out_queue.empty())
+        self.assertListEqual(urls, result)
+
+        fetcher.cancel()

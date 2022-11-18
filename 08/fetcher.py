@@ -32,7 +32,6 @@ class Fetcher:
             try:
                 async with session.get(url) as resp:
                     page = await resp.text()
-                    print(page)
                     await self._out_queue.put(self.parse_url(page))
             finally:
                 self._queue.task_done()
@@ -43,18 +42,19 @@ class Fetcher:
 
         async with ClientSession() as session:
             self._workers = [
-                create_task(self._fetch_url(session)) for _ in range(self._workers_count)
+                create_task(self._fetch_url(session))
+                for _ in range(self._workers_count)
             ]
 
             await self._queue.join()
-        
+
         output = []
         while not self._out_queue.empty():
             result = await self._out_queue.get()
             output.append(result)
             self._out_queue.task_done()
         return output
-    
+
     def cancel(self):
         for worker in self._workers:
             worker.cancel()
@@ -73,15 +73,15 @@ async def main():
         for url in urls_file:
             urls.append(url)
 
-    time_1 = time()
+    start = time()
     result = await fetcher.fetch(urls)
-    time_2 = time()
+    end = time()
 
     fetcher.cancel()
     printer = PrettyPrinter()
     printer.pprint(result)
-    print(f"{len(result)=}")
-    print("Time:", time_2 - time_1)
+    print("Time:", start - end)
+
 
 if __name__ == "__main__":
     run(main())
