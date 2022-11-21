@@ -6,7 +6,7 @@ from faker import Faker
 from json_parser import parse_json, KeyWordList
 
 
-class TestPraseJSON(unittest.TestCase):
+class TestParseJSON(unittest.TestCase):
     @unittest.mock.patch("json_parser.KeyWordList")
     def test_case_mock(self, key_word_list_mock):
         fake = Faker()
