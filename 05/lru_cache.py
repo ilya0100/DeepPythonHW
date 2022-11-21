@@ -12,11 +12,9 @@ class LRUCache:
         return value
 
     def set(self, key, value):
-        if (
-            key in self._value_storage
-            and value is self._value_storage[key]
-        ):
-            return None
+        if key in self._value_storage:
+            del self._value_storage[key]
+            self._size -= 1
 
         self._insert_item(key, value)
         self._pop_items()
