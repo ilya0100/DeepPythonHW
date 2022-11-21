@@ -7,7 +7,6 @@ from json_parser import parse_json, KeyWordList
 
 
 class TestPraseJSON(unittest.TestCase):
-
     @unittest.mock.patch("json_parser.KeyWordList")
     def test_case_mock(self, key_word_list_mock):
         fake = Faker()
@@ -59,6 +58,6 @@ class TestPraseJSON(unittest.TestCase):
         json_str = str(json).replace("'", '"')
 
         key_list = KeyWordList()
-        parse_json(json_str, key_list)
+        parse_json(json_str, key_list, "", "")
 
         self.assertEqual(len(key_list.list), 0)
