@@ -1,0 +1,20 @@
+2022-11-24 17:43:25,028	Cache initializing with limit = 3
+2022-11-24 17:43:25,028	Set value: value_1 with key: key_1
+2022-11-24 17:43:25,029	Cache size = 1
+2022-11-24 17:43:25,029	Set value: value_2 with key: key_2
+2022-11-24 17:43:25,029	Cache size = 2
+2022-11-24 17:43:25,029	Get value with key: key_1
+2022-11-24 17:43:25,029	Update cache storage for key: key_1
+2022-11-24 17:43:25,029	Set value: value_3 with key: key_3
+2022-11-24 17:43:25,030	Cache size = 3
+2022-11-24 17:43:25,030	Set value: value_4 with key: key_4
+2022-11-24 17:43:25,030	Cache size = 3
+2022-11-24 17:43:25,030	Get value with key: invalid_key
+2022-11-24 17:43:25,030	Set value: value with key: key_3
+2022-11-24 17:43:25,030	Update cache storage for existing key: key_3
+2022-11-24 17:43:25,031	Cache size = 3
+2022-11-24 17:43:25,031	Change cache limit, new limit = 1
+2022-11-24 17:43:25,031	Set value: value with key: key
+2022-11-24 17:43:25,031	Cache size = 1
+2022-11-24 17:43:25,031	Get value with key: key
+2022-11-24 17:43:25,031	Update cache storage for key: key
