@@ -1021,7 +1021,7 @@ static const struct _cffi_type_context_s _cffi_type_context = {
 
 #ifdef PYPY_VERSION
 PyMODINIT_FUNC
-_cffi_pypyinit_matrix_lib(const void *p[])
+_cffi_pypyinit_lib_matrix(const void *p[])
 {
     p[0] = (const void *)0x2601;
     p[1] = &_cffi_type_context;
@@ -1032,22 +1032,22 @@ _cffi_pypyinit_matrix_lib(const void *p[])
 #  ifdef _MSC_VER
      PyMODINIT_FUNC
 #  if PY_MAJOR_VERSION >= 3
-     PyInit_matrix_lib(void) { return NULL; }
+     PyInit_lib_matrix(void) { return NULL; }
 #  else
-     initmatrix_lib(void) { }
+     initlib_matrix(void) { }
 #  endif
 #  endif
 #elif PY_MAJOR_VERSION >= 3
 PyMODINIT_FUNC
-PyInit_matrix_lib(void)
+PyInit_lib_matrix(void)
 {
-  return _cffi_init("matrix_lib", 0x2601, &_cffi_type_context);
+  return _cffi_init("lib_matrix", 0x2601, &_cffi_type_context);
 }
 #else
 PyMODINIT_FUNC
-initmatrix_lib(void)
+initlib_matrix(void)
 {
-  _cffi_init("matrix_lib", 0x2601, &_cffi_type_context);
+  _cffi_init("lib_matrix", 0x2601, &_cffi_type_context);
 }
 #endif
 

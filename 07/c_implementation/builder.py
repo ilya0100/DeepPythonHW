@@ -8,9 +8,9 @@ def build_lib():
         builder.cdef(define.read())
 
     with open("matrix.c", "r", encoding="utf-8") as source:
-        builder.set_source("matrix_lib", source.read())
+        builder.set_source("lib_matrix", source.read())
 
-    builder.compile(target="matrix_lib.so")
+    builder.compile(target="lib_matrix.so")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from matrix import PyMatrix, matrix_mul
 
 
 ffi = cffi.FFI()
-matrix_lib = ffi.dlopen("07/c_implementation/matrix_lib.so")
+lib_matrix = ffi.dlopen("07/c_implementation/lib_matrix.so")
 with open("07/c_implementation/matrix.h", "r", encoding="utf-8") as define:
     ffi.cdef(define.read())
 
@@ -15,7 +15,7 @@ with open("07/c_implementation/matrix.h", "r", encoding="utf-8") as define:
 def fill_matrix(cmatrix, source):
     for i in range(cmatrix.rows):
         for j in range(cmatrix.cols):
-            matrix_lib.set_elem(cmatrix, i, j, source[i, j])
+            lib_matrix.set_elem(cmatrix, i, j, source[i, j])
 
 
 class TestMatrix(TestCase):
@@ -41,19 +41,19 @@ class TestMatrix(TestCase):
     def test_cffi_mul(self):
         for case in self.cases:
             matrix_l = case["l"]
-            c_matrix_l = matrix_lib.create_matrix(
+            c_matrix_l = lib_matrix.create_matrix(
                 matrix_l.shape[0], matrix_l.shape[1]
             )
             fill_matrix(c_matrix_l, matrix_l)
 
             matrix_r = case["r"]
-            c_matrix_r = matrix_lib.create_matrix(
+            c_matrix_r = lib_matrix.create_matrix(
                 matrix_r.shape[0], matrix_r.shape[1]
             )
             fill_matrix(c_matrix_r, matrix_r)
 
             result = matrix_l @ matrix_r
-            c_result = matrix_lib.mul(c_matrix_l, c_matrix_r)
+            c_result = lib_matrix.mul(c_matrix_l, c_matrix_r)
             c_result_list = ffi.unpack(
                 c_result.data, c_result.rows * c_result.cols
             )

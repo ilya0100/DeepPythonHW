@@ -7,7 +7,7 @@ from matrix import PyMatrix, matrix_mul
 
 
 ffi = cffi.FFI()
-matrix_lib = ffi.dlopen("07/c_implementation/matrix_lib.so")
+lib_matrix = ffi.dlopen("07/c_implementation/lib_matrix.so")
 with open("07/c_implementation/matrix.h", "r", encoding="utf-8") as define:
     ffi.cdef(define.read())
 
@@ -15,13 +15,13 @@ with open("07/c_implementation/matrix.h", "r", encoding="utf-8") as define:
 def fill_matrix(cmatrix, source):
     for i in range(cmatrix.rows):
         for j in range(cmatrix.cols):
-            matrix_lib.set_elem(cmatrix, i, j, source[i, j])
+            lib_matrix.set_elem(cmatrix, i, j, source[i, j])
 
 
 def main(size=100):
     np_matrix = np.random.random((size, size))
     py_matrix = PyMatrix(size, size, np_matrix.flatten())
-    c_matrix = matrix_lib.create_matrix(size, size)
+    c_matrix = lib_matrix.create_matrix(size, size)
     fill_matrix(c_matrix, np_matrix)
 
     print("========= Python ========")
@@ -37,7 +37,7 @@ def main(size=100):
     average_time = 0
     for _ in range(10):
         c_start_time = time()
-        c_result = matrix_lib.mul(c_matrix, c_matrix)
+        c_result = lib_matrix.mul(c_matrix, c_matrix)
         c_end_time = time()
         average_time += (c_end_time - c_start_time) / 10
     print(f"Time: {average_time}")
