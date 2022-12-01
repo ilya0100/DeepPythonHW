@@ -1,12 +1,12 @@
-from pprint import PrettyPrinter
 import re
 
+from pprint import PrettyPrinter
 from argparse import ArgumentParser
 from asyncio import Queue, create_task, run
 from collections import Counter
-from time import time
 from bs4 import BeautifulSoup
 from aiohttp import ClientSession
+from aiohttp.web import HTTPException
 
 
 class Fetcher:
@@ -33,6 +33,10 @@ class Fetcher:
                 async with session.get(url) as resp:
                     page = await resp.text()
                     await self._out_queue.put(self.parse_url(page))
+            except HTTPException as err:
+                await self._out_queue.put(err)
+            except Exception as err:
+                await self._out_queue.put(err)
             finally:
                 self._queue.task_done()
 
@@ -68,19 +72,21 @@ async def main():
     fetcher_args = parser.parse_args()
     fetcher = Fetcher(int(fetcher_args.c))
 
-    urls = []
+    printer = PrettyPrinter()
+    batch_size = 10
     with open(fetcher_args.f, "r", encoding="utf-8") as urls_file:
+        urls = []
+        read_count = 0
         for url in urls_file:
             urls.append(url)
+            read_count += 1
+            if read_count == batch_size:
+                result = await fetcher.fetch(urls)
+                fetcher.cancel()
 
-    start = time()
-    result = await fetcher.fetch(urls)
-    end = time()
-
-    fetcher.cancel()
-    printer = PrettyPrinter()
-    printer.pprint(result)
-    print("Time:", start - end)
+                printer.pprint(result)
+                read_count = 0
+                urls = []
 
 
 if __name__ == "__main__":
