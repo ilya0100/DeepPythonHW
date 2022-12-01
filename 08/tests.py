@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 
 from asyncio import create_task
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, call, patch
 from unittest.async_case import IsolatedAsyncioTestCase
 
 from faker import Faker
@@ -46,38 +46,36 @@ class TestFetcher(IsolatedAsyncioTestCase):
         resp_mock = AsyncMock()
         session_mock.get.return_value = resp_mock
         resp_mock.__aenter__.return_value.text.return_value = page_text
+        callback_mock = Mock()
 
-        task = create_task(fetcher._fetch_url(session_mock))
+        task = create_task(fetcher._fetch_url(session_mock, callback_mock))
         await fetcher._queue.join()
         task.cancel()
 
         self.assertTrue(fetcher._queue.empty())
+
         expected_result = fetcher.parse_url(page_text)
-        while not fetcher._out_queue.empty():
-            text = await fetcher._out_queue.get()
-            self.assertEqual(expected_result, text)
+        self.assertEqual(callback_mock.call_count, len(urls))
+        self.assertEqual(
+            callback_mock.mock_calls, [call(expected_result)] * len(urls)
+        )
+
+    async def test_start(self):
+        fetcher = Fetcher(workers_count=5)
+        fetcher.start(Mock())
+
+        for worker in fetcher._workers:
+            self.assertFalse(worker.done())
 
     async def test_fetch(self):
         fake = Faker()
         urls = [fake.url() for _ in range(10)]
 
-        fetcher = Fetcher(workers_count=5)
+        fetcher = Fetcher(workers_count=5, max_size=11)
+        await fetcher.fetch(urls)
 
-        async def side_effect(_):
-            while True:
-                url = await fetcher._queue.get()
-                await fetcher._out_queue.put(url)
-                fetcher._queue.task_done()
+        for url in urls:
+            self.assertEqual(await fetcher._queue.get(), url)
+            fetcher._queue.task_done()
 
-        with patch("fetcher.Fetcher._fetch_url") as fetch_url_mock:
-            fetch_url_mock.side_effect = side_effect
-            result = await fetcher.fetch(urls)
-
-        for worker in fetcher._workers:
-            self.assertFalse(worker.done())
-
-        self.assertTrue(fetcher._queue.empty())
-        self.assertTrue(fetcher._out_queue.empty())
-        self.assertListEqual(urls, result)
-
-        fetcher.cancel()
+        fetcher.stop()
